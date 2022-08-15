@@ -24,10 +24,18 @@ struct Token {
 // Pointer to token currently processed
 Token *token;
 
-// Report errors
-void error(char *fmt, ...) {
+// Pointer to input string
+char *input;
+
+// Report location of an error
+void error_at(char *loc, char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
+
+  int pos = loc - input;
+  fprintf(stderr, "%s\n", input);
+  fprintf(stderr, "%*s", pos, " ");
+  fprintf(stderr, "^ ");
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
   exit(1);
@@ -44,7 +52,7 @@ bool consume_symbol(char op) {
 // Get an integer from token or raise an error
 int expect_number() {
   if (token->type != TK_NUMBER)
-    error("Not a number");
+    error_at(token->str, "Not a number");
   int val = token->val;
   token = token->next;
   return val;
@@ -91,7 +99,7 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    error("Failed to tokenize");
+    error_at(token->str, "Failed to tokenize");
   }
 
   new_token(TK_EOF, cur, p);
@@ -103,9 +111,10 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Wrong number of arguments input\n");
     return 1;
   }
+  input = argv[1];
 
   // Tokenize the input string
-  token = tokenize(argv[1]);
+  token = tokenize(input);
 
   // Output the first half of assembly
   printf(".intel_syntax noprefix\n");
